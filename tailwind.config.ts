@@ -9,8 +9,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
+        background: "#FFF5B4",
         foreground: "var(--foreground)",
+        primary: "#FF6949",
+        secondary: "#FFF5B4",
+        accent: "#374F59",
+      },
+      fontFamily: {
+        sans: ["var(--font-ibm-plex-thai)", "sans-serif"],
       },
     },
   },
