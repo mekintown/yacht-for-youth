@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import axios from "axios";
+import { motion, AnimatePresence } from "framer-motion";
+
 import {
   Dialog,
   DialogContent,
@@ -10,7 +12,8 @@ import {
   DialogDescription,
   DialogClose,
 } from "@/components/ui/dialog";
-import { motion, AnimatePresence } from "framer-motion";
+
+import { Button } from "@/components/ui/button";
 
 export default function CheckContractPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -19,11 +22,10 @@ export default function CheckContractPage() {
   const [result, setResult] = useState<any>(null);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Control the Dialog manually
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
+    if (e.target.files?.length) {
       setSelectedFile(e.target.files[0]);
       setErrorMsg("");
       setResult(null);
@@ -48,13 +50,10 @@ export default function CheckContractPage() {
       const res = await axios.post(
         "http://localhost:8081/check-labor-contract",
         formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
 
       setResult(res.data);
-      // When we have a result, open the dialog
       setIsModalOpen(true);
     } catch (err) {
       setErrorMsg("ตรวจสอบเอกสารล้มเหลว, โปรดลองใหม่ภายหลัง");
@@ -86,16 +85,15 @@ export default function CheckContractPage() {
           className="mb-4 w-full border border-gray-300 rounded-md p-2"
         />
 
-        {/* Upload Button */}
-        <button
+        {/* Shadcn Button for uploading */}
+        <Button
+          variant="default"
+          className="w-full"
           onClick={handleUpload}
           disabled={isUploading}
-          className={`w-full bg-primary text-white font-medium py-2 rounded-md transition-all hover:bg-primary/80 ${
-            isUploading ? "opacity-60 cursor-not-allowed" : ""
-          }`}
         >
           {isUploading ? "กำลังตรวจสอบ..." : "อัปโหลดเอกสารเพื่อตรวจสอบ"}
-        </button>
+        </Button>
 
         {/* Error Message */}
         {errorMsg && (
@@ -158,9 +156,11 @@ export default function CheckContractPage() {
                   </div>
                 )}
 
-                {/* Close Dialog Button */}
-                <DialogClose className="mt-6 px-4 py-2 bg-primary text-white rounded hover:bg-primary/80 transition">
-                  ปิด
+                {/* Use a shadcn "DialogClose" or our custom Button */}
+                <DialogClose asChild>
+                  <Button variant="default" className="mt-6">
+                    ปิด
+                  </Button>
                 </DialogClose>
               </DialogContent>
             </motion.div>

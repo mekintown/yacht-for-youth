@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import axios from "axios";
 import { ContractPayload } from "@/types/ContractPayload";
+import { Button } from "@/components/ui/button";
 
 export default function CreateContractPage() {
   // 1. Basic Contract Info
@@ -883,13 +884,9 @@ export default function CreateContractPage() {
         >
           ยกเลิก
         </Link>
-        <button
-          type="submit"
-          onClick={handleSubmit}
-          className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/80 transition"
-        >
+        <Button variant="default" onClick={handleSubmit} disabled={false}>
           ดาวน์โหลด
-        </button>
+        </Button>
       </div>
     </form>
   );

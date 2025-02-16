@@ -1,6 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { Button, buttonVariants } from "@/components/ui/button";
 
 const features = [
   {
@@ -8,21 +9,21 @@ const features = [
     description:
       "สแกนเอกสารจ้างงานดูว่ามีความเป็นธรรม และแจ้งเตือนเมื่อผิดกฎหมาย",
     link: "/contracts",
-    color: "from-accent to-primary",
+    color: "gradient",
   },
   {
     title: "⚖️ สร้างเอกสารจ้างงานอัตโนมัติ",
     description:
       "สร้างเอกสารจ้างงานที่มีมาตราฐาน ลดระยะเวลาในการจัดทำเอกสารจ้างงาน",
     link: "/generate-contracts",
-    color: "from-accent to-primary",
+    color: "gradient",
   },
   {
     title: "📍 ค้นหาสถานที่ทำงาน",
     description:
       "ช่วยให้ลูกจ้างและนายจ้างหาตำแหน่งงานที่อยู่ใกล้กัน เพิ่มความสะดวกในการเดินทาง",
     link: "/location",
-    color: "from-accent to-primary",
+    color: "gradient",
   },
 ];
 
@@ -53,13 +54,15 @@ export default function Features() {
 
             {/* Call to Action Button */}
             <Link href={feature.link}>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className={`mt-auto px-6 py-3 bg-gradient-to-r ${feature.color} text-white font-medium rounded-lg shadow-md transition-all duration-200`}
+              <Button
+                variant="gradient"
+                className={buttonVariants({
+                  variant: "gradient",
+                  className: "mt-auto px-6 py-3",
+                })}
               >
                 ดูเพิ่มเติม →
-              </motion.button>
+              </Button>
             </Link>
           </motion.div>
         ))}
