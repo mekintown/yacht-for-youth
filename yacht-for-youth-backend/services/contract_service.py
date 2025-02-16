@@ -1,25 +1,21 @@
 import os
 from docxtpl import DocxTemplate
-from domain.contract_model import LaborContractData
+
+import io
+from docxtpl import DocxTemplate
 
 class ContractService:
     def __init__(self, template_path: str):
         self.template_path = template_path
-    
-    def generate_contract(self, data: LaborContractData) -> str:
-        """
-        Merges data with the labor_contract_template.docx and returns output file path.
-        """
-        template = DocxTemplate(self.template_path)
 
-        context = data.dict()
+    def generate_contract_in_memory(self, data: dict) -> io.BytesIO:
+        try:
+            template = DocxTemplate(self.template_path)
+            template.render(data)
 
-        template.render(context)
-
-        output_filename = f"labor_contract_{data.employee_name}.docx"
-        output_path = os.path.join("generated_docs", output_filename)
-
-        os.makedirs("generated_docs", exist_ok=True)
-        template.save(output_path)
-
-        return output_path
+            file_stream = io.BytesIO()
+            template.save(file_stream)
+            file_stream.seek(0)  
+            return file_stream
+        except Exception as e:
+            raise Exception(f"Error generating contract: {str(e)}")

@@ -1,4 +1,9 @@
 Flask==3.1.0
 docxtpl==0.16.7
 python-docx==0.8.11
-pydantic==1.10.7 
+pydantic==1.10.7
+flask-swagger==0.2.14 
+flask-swagger-ui==4.11.1
+flask-cors==5.0.0
+flask-restful==0.3.10
+marshmallow==3.26.1

@@ -1,24 +1,33 @@
-from flask import Flask, request, send_file, jsonify
-from services.contract_service import ContractService
-from domain.contract_model import LaborContractData
-from pydantic import ValidationError
+from flask import Flask, jsonify
+from flask_restful import Api
+from flask_swagger import swagger
+from flask_swagger_ui import get_swaggerui_blueprint
+from flask_cors import CORS
+from routes.contract_routes import ContractResource
 
 app = Flask(__name__)
+api = Api(app)
+CORS(app)
 
-CONTRACT_TEMPLATE_PATH = "templates/labor_contract_template.docx"
-contract_service = ContractService(CONTRACT_TEMPLATE_PATH)
+# Add ContractResource to Flask-RESTful API
+api.add_resource(ContractResource, "/generate-labor-contract")
 
-@app.route('/generate-labor-contract', methods=['POST'])
-def generate_labor_contract():
-    try:
-        data_json = request.get_json()
-        contract_data = LaborContractData(**data_json)  # validate & parse
-    except ValidationError as e:
-        return jsonify({"error": str(e)}), 400
+# Swagger Documentation Route
+@app.route("/swagger")
+def get_swagger():
+    """Generate Swagger API documentation."""
+    swag = swagger(app) 
+    swag["info"]["version"] = "1.0"
+    swag["info"]["title"] = "Labor Contract API"
+    return jsonify(swag)  
 
-    output_path = contract_service.generate_contract(contract_data)
+# Swagger UI Setup
+SWAGGER_URL = "/swagger-ui"
+API_URL = "/swagger"
+swagger_ui_blueprint = get_swaggerui_blueprint(
+    SWAGGER_URL, API_URL, config={"app_name": "Labor Contract API"}
+)
+app.register_blueprint(swagger_ui_blueprint, url_prefix=SWAGGER_URL)
 
-    return send_file(output_path, as_attachment=True)
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
