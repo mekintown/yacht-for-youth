@@ -4,6 +4,7 @@ from flask_swagger import swagger
 from flask_swagger_ui import get_swaggerui_blueprint
 from flask_cors import CORS, cross_origin
 from routes.contract_routes import ContractResource
+from routes.document_check_routes import CheckDocumentResource
 
 app = Flask(__name__)
 api = Api(app)
@@ -17,6 +18,7 @@ def ping():
 
 # Add ContractResource to Flask-RESTful API
 api.add_resource(ContractResource, "/generate-labor-contract")
+api.add_resource(CheckDocumentResource, "/check-labor-contract")
 
 # Swagger Documentation Route
 @app.route("/swagger")

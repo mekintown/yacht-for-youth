@@ -1,6 +1,3 @@
-import os
-from docxtpl import DocxTemplate
-
 import io
 from docxtpl import DocxTemplate
 
