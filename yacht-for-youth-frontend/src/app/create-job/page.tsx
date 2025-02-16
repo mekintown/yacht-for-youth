@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import axios from "axios";
+import { ContractPayload } from "@/types/ContractPayload";
 
 export default function CreateContractPage() {
   // 1. Basic Contract Info
@@ -42,7 +44,7 @@ export default function CreateContractPage() {
   const [contractEnd, setContractEnd] = useState("");
   const [workLocation, setWorkLocation] = useState("");
 
-  // 7. Probation Clause
+  // 7. Probation
   const [includeProbation, setIncludeProbation] = useState(false);
   const [probationPeriodDays, setProbationPeriodDays] = useState("");
 
@@ -75,7 +77,7 @@ export default function CreateContractPage() {
   const [employerNoticePay, setEmployerNoticePay] = useState("");
   const [employeeNoticeMonths, setEmployeeNoticeMonths] = useState("");
 
-  // 12. Optional Clauses
+  // 12. Additional Settings
   const [includeRulesClause, setIncludeRulesClause] = useState(false);
   const [includeOthersClause, setIncludeOthersClause] = useState(false);
 
@@ -84,7 +86,7 @@ export default function CreateContractPage() {
 
   const handleSubmit = async () => {
     // Build the payload
-    const payload = {
+    const payload: ContractPayload = {
       contract_location: contractLocation,
       day,
       month,
@@ -108,17 +110,17 @@ export default function CreateContractPage() {
       wage_unit: wageUnit,
       wage_payment_day: wagePaymentDay,
       wage_payment_method: wagePaymentMethod,
-      bank_name: bankName || undefined,
+      bank_name: bankName || null,
 
       has_fixed_term: hasFixedTerm,
-      contract_duration: contractDuration || undefined,
-      contract_duration_unit: contractDurationUnit || undefined,
-      contractStart,
-      contract_end: contractEnd || undefined,
+      contract_duration: contractDuration || null,
+      contract_duration_unit: contractDurationUnit || null,
+      contract_start: contractStart,
+      contract_end: contractEnd || null,
       work_location: workLocation,
 
       include_probation: includeProbation,
-      probation_period_days: probationPeriodDays || undefined,
+      probation_period_days: probationPeriodDays || null,
 
       daily_hours_limit: dailyHoursLimit,
       weekly_days: weeklyDays,
@@ -135,10 +137,9 @@ export default function CreateContractPage() {
       holiday_rate: holidayRate,
 
       include_food_clause: includeFoodClause,
-      food_details: foodDetails || undefined,
-      food_price: foodPrice || undefined,
-      food_price_unit: foodPriceUnit || undefined,
-
+      food_details: foodDetails || null,
+      food_price: foodPrice || null,
+      food_price_unit: foodPriceUnit || null,
       include_accommodation_clause: includeAccommodationClause,
 
       employer_notice_months: employerNoticeMonths,
@@ -150,9 +151,31 @@ export default function CreateContractPage() {
       include_stamp: includeStamp,
     };
 
-    // Example: call your API (or log)
-    console.log("Submitted Contract Data:", payload);
-    alert("Contract data submitted! (Check console)");
+    try {
+      // POST the data to Flask
+      const response = await axios.post(
+        "http://localhost:8081/generate-labor-contract",
+        payload,
+        { responseType: "blob" }
+      );
+
+      // If success, we expect a .docx file
+      const blob = response.data;
+      const downloadUrl = window.URL.createObjectURL(blob);
+
+      // Create a link element to trigger a file download
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = "labor_contract.docx";
+      link.click();
+      window.URL.revokeObjectURL(downloadUrl);
+
+      // Optionally show a success message
+      alert("Contract downloaded successfully!");
+    } catch (error) {
+      console.error("Error generating contract:", error);
+      alert("Failed to generate contract. Please try again later.");
+    }
   };
 
   return (
@@ -167,15 +190,15 @@ export default function CreateContractPage() {
       {/* SECTION 1: Basic Contract Info */}
       <div className="border-b border-gray-200 pb-6 mb-6">
         <h2 className="text-xl font-semibold text-gray-800">
-          1. Basic Contract Info
+          1. ข้อมูลสัญญาพื้นฐาน
         </h2>
         <p className="text-sm text-gray-500 mb-4">
-          ข้อมูลพื้นฐานเกี่ยวกับสัญญา (เช่น สถานที่ทำสัญญา, วัน/เดือน/ปี).
+          กรอกสถานที่และวันที่ทำสัญญา
         </p>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              สถานที่ทำสัญญา (contract_location)
+              สถานที่ทำสัญญา
             </label>
             <input
               className="mt-1 block w-full border border-gray-300 rounded-md p-2"
@@ -185,7 +208,7 @@ export default function CreateContractPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              วัน (day)
+              วัน
             </label>
             <input
               className="mt-1 block w-full border border-gray-300 rounded-md p-2"
@@ -195,7 +218,7 @@ export default function CreateContractPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              เดือน (month)
+              เดือน
             </label>
             <input
               className="mt-1 block w-full border border-gray-300 rounded-md p-2"
@@ -205,7 +228,7 @@ export default function CreateContractPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              ปี (year)
+              ปี
             </label>
             <input
               className="mt-1 block w-full border border-gray-300 rounded-md p-2"
@@ -219,10 +242,10 @@ export default function CreateContractPage() {
       {/* SECTION 2: Employer Info */}
       <div className="border-b border-gray-200 pb-6 mb-6">
         <h2 className="text-xl font-semibold text-gray-800">
-          2. Employer Info
+          2. ข้อมูลนายจ้าง
         </h2>
         <p className="text-sm text-gray-500 mb-4">
-          ข้อมูลนายจ้าง (คำนำหน้า, ชื่อ, ที่อยู่, ฯลฯ).
+          ระบุคำนำหน้า ชื่อ และที่อยู่ของนายจ้าง
         </p>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
@@ -256,7 +279,7 @@ export default function CreateContractPage() {
               onChange={(e) => setUseOfficeAddress(e.target.checked)}
             />
             <label className="block text-sm font-medium text-gray-700">
-              สำนักงานตั้งอยู่ที่?
+              ที่อยู่สำนักงาน
             </label>
           </div>
           <div className="md:col-span-4">
@@ -276,10 +299,10 @@ export default function CreateContractPage() {
       {/* SECTION 3: Employee Info */}
       <div className="border-b border-gray-200 pb-6 mb-6">
         <h2 className="text-xl font-semibold text-gray-800">
-          3. Employee Info
+          3. ข้อมูลลูกจ้าง
         </h2>
         <p className="text-sm text-gray-500 mb-4">
-          ข้อมูลลูกจ้าง (คำนำหน้า, ชื่อ, ที่อยู่).
+          ระบุคำนำหน้า ชื่อ และที่อยู่ของลูกจ้าง
         </p>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
@@ -322,10 +345,10 @@ export default function CreateContractPage() {
       {/* SECTION 4: Position & Work Details */}
       <div className="border-b border-gray-200 pb-6 mb-6">
         <h2 className="text-xl font-semibold text-gray-800">
-          4. Position & Work Details
+          4. ตำแหน่งและรายละเอียดงาน
         </h2>
         <p className="text-sm text-gray-500 mb-4">
-          ตำแหน่งงาน, แผนก, หน้าที่รับผิดชอบ, และรายละเอียดเพิ่มเติม
+          ระบุตำแหน่งงาน แผนก หน้าที่รับผิดชอบ และรายละเอียดอื่น ๆ
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -360,7 +383,7 @@ export default function CreateContractPage() {
           </div>
           <div className="md:col-span-1">
             <label className="block text-sm font-medium text-gray-700">
-              รายละเอียดงาน (work_details)
+              รายละเอียดงาน
             </label>
             <input
               className="mt-1 block w-full border border-gray-300 rounded-md p-2"
@@ -373,16 +396,14 @@ export default function CreateContractPage() {
 
       {/* SECTION 5: Wage Info */}
       <div className="border-b border-gray-200 pb-6 mb-6">
-        <h2 className="text-xl font-semibold text-gray-800">
-          5. อัตราค่าจ้าง (Wage Info)
-        </h2>
+        <h2 className="text-xl font-semibold text-gray-800">5. อัตราค่าจ้าง</h2>
         <p className="text-sm text-gray-500 mb-4">
-          อัตราค่าจ้าง, การจ่ายเงิน, และวิธีการจ่าย
+          ระบุอัตราค่าจ้าง วันจ่าย และวิธีจ่าย
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Wage Amount
+              ค่าจ้าง (จำนวนเงิน)
             </label>
             <input
               className="mt-1 block w-full border border-gray-300 rounded-md p-2"
@@ -392,7 +413,7 @@ export default function CreateContractPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Wage Unit
+              หน่วย (วัน/เดือน/ชั่วโมง)
             </label>
             <select
               className="mt-1 block w-full border border-gray-300 rounded-md p-2"
@@ -406,7 +427,7 @@ export default function CreateContractPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Wage Payment Day
+              วันจ่ายค่าจ้าง
             </label>
             <input
               className="mt-1 block w-full border border-gray-300 rounded-md p-2"
@@ -416,7 +437,7 @@ export default function CreateContractPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Payment Method
+              วิธีจ่าย
             </label>
             <select
               className="mt-1 block w-full border border-gray-300 rounded-md p-2"
@@ -430,7 +451,7 @@ export default function CreateContractPage() {
           {wagePaymentMethod === "โอนผ่านบัญชีธนาคาร" && (
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700">
-                Bank Name
+                ธนาคาร
               </label>
               <input
                 className="mt-1 block w-full border border-gray-300 rounded-md p-2"
@@ -445,10 +466,10 @@ export default function CreateContractPage() {
       {/* SECTION 6: Contract Duration & Work Location */}
       <div className="border-b border-gray-200 pb-6 mb-6">
         <h2 className="text-xl font-semibold text-gray-800">
-          6. ระยะเวลาการจ้าง & สถานที่ทำงาน
+          6. ระยะเวลาสัญญา & สถานที่ทำงาน
         </h2>
         <p className="text-sm text-gray-500 mb-4">
-          กำหนดสัญญา (fixed term หรือไม่) วันเริ่ม-วันสิ้นสุด และสถานที่ทำงาน
+          เลือกกำหนดระยะเวลาสัญญาหรือไม่ วันเริ่ม-สิ้นสุด และสถานที่ทำงาน
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex items-center gap-2">
@@ -458,14 +479,14 @@ export default function CreateContractPage() {
               onChange={(e) => setHasFixedTerm(e.target.checked)}
             />
             <label className="block text-sm font-medium text-gray-700">
-              มีกำหนดระยะเวลาหรือไม่?
+              มีกำหนดระยะเวลาสัญญาหรือไม่?
             </label>
           </div>
           {hasFixedTerm && (
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  ระยะเวลา (contract_duration)
+                  ระยะเวลา
                 </label>
                 <input
                   className="mt-1 block w-full border border-gray-300 rounded-md p-2"
@@ -476,14 +497,14 @@ export default function CreateContractPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  หน่วย (contract_duration_unit)
+                  หน่วย (ปี / เดือน)
                 </label>
                 <select
                   className="mt-1 block w-full border border-gray-300 rounded-md p-2"
                   value={contractDurationUnit}
                   onChange={(e) => setContractDurationUnit(e.target.value)}
                 >
-                  <option value="">-- หน่วย --</option>
+                  <option value="">-- เลือก --</option>
                   <option value="ปี">ปี</option>
                   <option value="เดือน">เดือน</option>
                 </select>
@@ -492,7 +513,7 @@ export default function CreateContractPage() {
           )}
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Contract Start
+              วันเริ่มสัญญา
             </label>
             <input
               className="mt-1 block w-full border border-gray-300 rounded-md p-2"
@@ -504,7 +525,7 @@ export default function CreateContractPage() {
           {hasFixedTerm && (
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Contract End
+                วันสิ้นสุดสัญญา
               </label>
               <input
                 className="mt-1 block w-full border border-gray-300 rounded-md p-2"
@@ -516,7 +537,7 @@ export default function CreateContractPage() {
           )}
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700">
-              Work Location
+              สถานที่ทำงาน
             </label>
             <input
               className="mt-1 block w-full border border-gray-300 rounded-md p-2"
@@ -527,10 +548,10 @@ export default function CreateContractPage() {
         </div>
       </div>
 
-      {/* SECTION 7: Probation Clause */}
+      {/* SECTION 7: Probation */}
       <div className="border-b border-gray-200 pb-6 mb-6">
         <h2 className="text-xl font-semibold text-gray-800">
-          7. ระยะเวลาการทดลองงาน
+          7. ระยะเวลาทดลองงาน
         </h2>
         <div className="flex items-center gap-3">
           <input
@@ -539,13 +560,13 @@ export default function CreateContractPage() {
             onChange={(e) => setIncludeProbation(e.target.checked)}
           />
           <span className="text-sm font-medium text-gray-700">
-            รวมระยะเวลาทดลองงานหรือไม่?
+            ต้องการกำหนดระยะเวลาทดลองงานหรือไม่?
           </span>
         </div>
         {includeProbation && (
           <div className="mt-4">
             <label className="block text-sm font-medium text-gray-700">
-              ทดลองงานกี่วัน?
+              ทดลองงาน (กี่วัน)
             </label>
             <input
               className="mt-1 block w-full border border-gray-300 rounded-md p-2 max-w-xs"
@@ -562,12 +583,12 @@ export default function CreateContractPage() {
           8. ชั่วโมงการทำงาน
         </h2>
         <p className="text-sm text-gray-500 mb-4">
-          กำหนดชั่วโมงการทำงาน, วันทำงานต่อสัปดาห์, และช่วงเวลาทำงาน/พัก
+          ระบุจำนวนชั่วโมงทำงานต่อวัน วันทำงานต่อสัปดาห์ และช่วงเวลาทำงาน/พัก
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Daily Hours Limit
+              จำกัดชั่วโมงต่อวัน
             </label>
             <input
               className="mt-1 block w-full border border-gray-300 rounded-md p-2"
@@ -578,7 +599,7 @@ export default function CreateContractPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Weekly Days
+              วันทำงานต่อสัปดาห์
             </label>
             <input
               className="mt-1 block w-full border border-gray-300 rounded-md p-2"
@@ -589,17 +610,17 @@ export default function CreateContractPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Start-End Time
+              เวลาเข้างาน - เลิกงาน
             </label>
             <div className="flex gap-2">
               <input
-                className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+                className="mt-1 w-full border border-gray-300 rounded-md p-2"
                 value={workStartTime}
                 onChange={(e) => setWorkStartTime(e.target.value)}
                 placeholder="09:00"
               />
               <input
-                className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+                className="mt-1 w-full border border-gray-300 rounded-md p-2"
                 value={workEndTime}
                 onChange={(e) => setWorkEndTime(e.target.value)}
                 placeholder="18:00"
@@ -608,17 +629,17 @@ export default function CreateContractPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Work Day Range
+              ช่วงวันทำงาน (เริ่ม - สิ้นสุด)
             </label>
             <div className="flex gap-2">
               <input
-                className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+                className="mt-1 w-full border border-gray-300 rounded-md p-2"
                 value={workDayStart}
                 onChange={(e) => setWorkDayStart(e.target.value)}
                 placeholder="จันทร์"
               />
               <input
-                className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+                className="mt-1 w-full border border-gray-300 rounded-md p-2"
                 value={workDayEnd}
                 onChange={(e) => setWorkDayEnd(e.target.value)}
                 placeholder="เสาร์"
@@ -627,7 +648,7 @@ export default function CreateContractPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Break Start
+              พักเริ่ม
             </label>
             <input
               className="mt-1 block w-full border border-gray-300 rounded-md p-2"
@@ -638,7 +659,7 @@ export default function CreateContractPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Break End
+              พักสิ้นสุด
             </label>
             <input
               className="mt-1 block w-full border border-gray-300 rounded-md p-2"
@@ -658,7 +679,7 @@ export default function CreateContractPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Annual Holidays (วันหยุดประเพณี)
+              วันหยุดประเพณี (ต่อปี)
             </label>
             <input
               className="mt-1 block w-full border border-gray-300 rounded-md p-2"
@@ -669,7 +690,7 @@ export default function CreateContractPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Annual Leave Days (วันหยุดพักประจำปี)
+              วันหยุดพักผ่อน (ต่อปี)
             </label>
             <input
               className="mt-1 block w-full border border-gray-300 rounded-md p-2"
@@ -680,7 +701,7 @@ export default function CreateContractPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Overtime Rate
+              อัตราค่าล่วงเวลา (OT)
             </label>
             <input
               className="mt-1 block w-full border border-gray-300 rounded-md p-2"
@@ -691,7 +712,7 @@ export default function CreateContractPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Holiday Rate
+              อัตราค่าจ้างวันหยุด
             </label>
             <input
               className="mt-1 block w-full border border-gray-300 rounded-md p-2"
@@ -715,25 +736,25 @@ export default function CreateContractPage() {
             onChange={(e) => setIncludeFoodClause(e.target.checked)}
           />
           <label className="text-sm font-medium text-gray-700">
-            เพิ่ม Clause อาหาร?
+            ต้องการระบุเงื่อนไขอาหารหรือไม่?
           </label>
         </div>
         {includeFoodClause && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Food Details
+                รายละเอียดอาหาร
               </label>
               <input
                 className="mt-1 block w-full border border-gray-300 rounded-md p-2"
                 value={foodDetails}
                 onChange={(e) => setFoodDetails(e.target.value)}
-                placeholder="เช่น 2"
+                placeholder="ตัวอย่าง: วันละ 2 มื้อ"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Food Price
+                ค่าอาหาร
               </label>
               <input
                 className="mt-1 block w-full border border-gray-300 rounded-md p-2"
@@ -744,14 +765,14 @@ export default function CreateContractPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Food Price Unit
+                หน่วย (วัน/เดือน)
               </label>
               <select
                 className="mt-1 block w-full border border-gray-300 rounded-md p-2"
                 value={foodPriceUnit}
                 onChange={(e) => setFoodPriceUnit(e.target.value)}
               >
-                <option value="">-- เลือกหน่วย --</option>
+                <option value="">-- เลือก --</option>
                 <option value="วัน">วัน</option>
                 <option value="เดือน">เดือน</option>
               </select>
@@ -765,7 +786,7 @@ export default function CreateContractPage() {
             onChange={(e) => setIncludeAccommodationClause(e.target.checked)}
           />
           <label className="text-sm font-medium text-gray-700">
-            เพิ่ม Clause ที่พัก?
+            ต้องการระบุเงื่อนไขที่พักหรือไม่?
           </label>
         </div>
       </div>
@@ -773,15 +794,15 @@ export default function CreateContractPage() {
       {/* SECTION 11: Notice Periods */}
       <div className="border-b border-gray-200 pb-6 mb-6">
         <h2 className="text-xl font-semibold text-gray-800">
-          11. Notice Period
+          11. ระยะเวลาแจ้งล่วงหน้า
         </h2>
         <p className="text-sm text-gray-500 mb-4">
-          ระยะเวลาในการบอกเลิกสัญญาสำหรับนายจ้าง/ลูกจ้าง
+          ระยะเวลาในการบอกเลิกสัญญาของนายจ้าง/ลูกจ้าง
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Employer Notice Months
+              นายจ้างแจ้งล่วงหน้า (เดือน)
             </label>
             <input
               className="mt-1 block w-full border border-gray-300 rounded-md p-2"
@@ -792,18 +813,18 @@ export default function CreateContractPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Employer Notice Pay
+              จ่ายชดเชยแทน (เดือน)
             </label>
             <input
               className="mt-1 block w-full border border-gray-300 rounded-md p-2"
               value={employerNoticePay}
               onChange={(e) => setEmployerNoticePay(e.target.value)}
-              placeholder="เช่น 1 (เดือน)"
+              placeholder="เช่น 1"
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Employee Notice Months
+              ลูกจ้างแจ้งล่วงหน้า (เดือน)
             </label>
             <input
               className="mt-1 block w-full border border-gray-300 rounded-md p-2"
@@ -815,10 +836,10 @@ export default function CreateContractPage() {
         </div>
       </div>
 
-      {/* SECTION 12: Optional Clauses */}
+      {/* SECTION 12: Additional Settings */}
       <div className="border-b border-gray-200 pb-6 mb-6">
         <h2 className="text-xl font-semibold text-gray-800">
-          12. Optional Clauses
+          12. รายละเอียดเพิ่มเติม
         </h2>
         <div className="flex items-center gap-4 mb-4">
           <div className="flex items-center gap-2">
@@ -828,7 +849,7 @@ export default function CreateContractPage() {
               onChange={(e) => setIncludeRulesClause(e.target.checked)}
             />
             <label className="text-sm font-medium text-gray-700">
-              Include Rules Clause?
+              ต้องการระบุเงื่อนไขกฎระเบียบหรือไม่?
             </label>
           </div>
           <div className="flex items-center gap-2">
@@ -838,29 +859,24 @@ export default function CreateContractPage() {
               onChange={(e) => setIncludeOthersClause(e.target.checked)}
             />
             <label className="text-sm font-medium text-gray-700">
-              Include Others Clause?
+              ต้องการระบุเงื่อนไขอื่น ๆ เพิ่มเติมหรือไม่?
+            </label>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={includeStamp}
+              onChange={(e) => setIncludeStamp(e.target.checked)}
+            />
+            <label className="text-sm font-medium text-gray-700">
+              รวมตัวแสตมป์หรือไม่?
             </label>
           </div>
         </div>
       </div>
 
-      {/* SECTION 13: Ending */}
-      <div className="border-b border-gray-200 pb-6 mb-6">
-        <h2 className="text-xl font-semibold text-gray-800">13. Ending</h2>
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={includeStamp}
-            onChange={(e) => setIncludeStamp(e.target.checked)}
-          />
-          <label className="text-sm font-medium text-gray-700">
-            Include Stamp?
-          </label>
-        </div>
-      </div>
-
       {/* Submit Button */}
-      <div className="mt-6 flex justify-end gap-x-6">
+      <div className="mt-6 flex justify-end gap-x-6 items-center">
         <Link
           href="/generate-contracts"
           className="inline-block text-sm font-semibold text-gray-700 hover:underline"
@@ -872,7 +888,7 @@ export default function CreateContractPage() {
           onClick={handleSubmit}
           className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/80 transition"
         >
-          บันทึก / สร้างงาน
+          ดาวน์โหลด
         </button>
       </div>
     </form>

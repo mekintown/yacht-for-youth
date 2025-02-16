@@ -2,12 +2,18 @@ from flask import Flask, jsonify
 from flask_restful import Api
 from flask_swagger import swagger
 from flask_swagger_ui import get_swaggerui_blueprint
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 from routes.contract_routes import ContractResource
 
 app = Flask(__name__)
 api = Api(app)
 CORS(app)
+
+@app.route("/ping", methods=["GET"])
+def ping():
+    response = jsonify({"msg": "pong"})
+    return response
+
 
 # Add ContractResource to Flask-RESTful API
 api.add_resource(ContractResource, "/generate-labor-contract")
@@ -29,5 +35,6 @@ swagger_ui_blueprint = get_swaggerui_blueprint(
 )
 app.register_blueprint(swagger_ui_blueprint, url_prefix=SWAGGER_URL)
 
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=8081)

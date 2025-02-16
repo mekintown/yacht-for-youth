@@ -1,4 +1,5 @@
 from flask import request, jsonify, send_file, make_response
+from flask_cors import cross_origin
 from flask_restful import Resource
 from marshmallow import ValidationError
 from services.contract_service import ContractService
@@ -10,6 +11,7 @@ contract_service = ContractService(CONTRACT_TEMPLATE_PATH)
 contract_schema = LaborContractSchema()
 
 class ContractResource(Resource):
+    @cross_origin()
     def post(self):
         try:
             data_json = request.get_json()
