@@ -1,0 +1,14 @@
+services:
+  - name: flask-backend
+    type: web
+    runtime: python  
+    plan: free
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:${PORT}  # PORT is automatically provided
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        sync: false  # Set this to `false` if you want to manually configure it in Render Dashboard
