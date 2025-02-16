@@ -5,6 +5,7 @@ import Link from "next/link";
 import axios from "axios";
 import { ContractPayload } from "@/types/ContractPayload";
 import { Button } from "@/components/ui/button";
+import { API_BASE_URL } from "@/constants/api";
 
 export default function CreateContractPage() {
   // 1. Basic Contract Info
@@ -155,7 +156,7 @@ export default function CreateContractPage() {
     try {
       // POST the data to Flask
       const response = await axios.post(
-        "http://localhost:8081/generate-labor-contract",
+        `${API_BASE_URL}/generate-labor-contract`,
         payload,
         { responseType: "blob" }
       );

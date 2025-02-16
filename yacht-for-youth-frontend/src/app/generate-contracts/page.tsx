@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import axios from "axios";
+import { API_BASE_URL } from "@/constants/api";
 
 const mockJobs = [
   { id: 1, title: "พนักงานขาย", wage: "300 บาท/วัน" },
@@ -92,7 +93,7 @@ export default function GenerateContractsPage() {
     try {
       // Send a POST request to the Flask API to generate the contract
       const response = await axios.post(
-        "http://localhost:8081/generate-labor-contract",
+        `${API_BASE_URL}/generate-labor-contract`,
         payload,
         { responseType: "blob" } // Expecting a .docx file
       );

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 
 import { Button } from "@/components/ui/button";
+import { API_BASE_URL } from "@/constants/api";
 
 export default function CheckContractPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -48,7 +49,7 @@ export default function CheckContractPage() {
 
       // POST request to your mock endpoint
       const res = await axios.post(
-        "http://localhost:8081/check-labor-contract",
+        `${API_BASE_URL}/check-labor-contract`,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
