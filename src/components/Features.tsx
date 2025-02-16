@@ -28,7 +28,7 @@ const features = [
 
 export default function Features() {
   return (
-    <section className="py-24 px-6 sm:px-12 z-10">
+    <section className="sm:py-24 px-6 py-12 z-10">
       <div className="text-center mb-10">
         <h2 className="text-4xl font-bold text-accent">🔍 ฟีเจอร์ของเรา</h2>
       </div>

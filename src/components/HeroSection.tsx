@@ -8,7 +8,7 @@ export default function HeroSection() {
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, ease: "easeOut" }}
-      className="pt-24 flex flex-col gap-5 items-center"
+      className="pt-24 flex flex-col gap-5 items-center z-10"
     >
       <Image
         src="/logo-with-background.svg"
