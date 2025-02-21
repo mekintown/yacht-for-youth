@@ -3,49 +3,38 @@ from flask_restful import Resource
 import easyocr
 from pdf2image import convert_from_bytes
 from PIL import Image
-import io
 import docx
 import os
 
 MODEL_STORAGE_PATH = "/var/data/easyocr_model"
 
 class CheckDocumentResource(Resource):
+    # Static class variable to hold the model in memory once
+    reader = None
+
     def __init__(self):
         self.ensure_model_persistent()
-
-        self.reader = easyocr.Reader(["th", "en"], model_storage_directory=MODEL_STORAGE_PATH)
 
     def ensure_model_persistent(self):
         if not os.path.exists(MODEL_STORAGE_PATH):
             print("Downloading EasyOCR model for the first time...")
             os.makedirs(MODEL_STORAGE_PATH, exist_ok=True)
-            # Trigger model download
             easyocr.Reader(["th", "en"], model_storage_directory=MODEL_STORAGE_PATH)
 
+    def get_reader(self):
+        if CheckDocumentResource.reader is None:
+            print("Loading EasyOCR model into memory...")
+            CheckDocumentResource.reader = easyocr.Reader(["th", "en"], model_storage_directory=MODEL_STORAGE_PATH)
+        return CheckDocumentResource.reader
 
     def post(self):
         """
         API endpoint to validate a labor contract file.
-        ---
-        tags:
-          - Document Check
-        consumes:
-          - multipart/form-data
-        parameters:
-          - in: formData
-            name: file
-            type: file
-            required: true
-            description: The labor contract document to check
-        responses:
-          200:
-            description: JSON with validation results
         """
         uploaded_file = request.files.get("file")
         if not uploaded_file:
             return {"error": "No file uploaded"}, 400
 
-        # Check file type
         ALLOWED_MIME_TYPES = {
             "image/png",
             "image/jpeg",
@@ -58,12 +47,7 @@ class CheckDocumentResource(Resource):
         try:
             text = self.extract_text_from_file(uploaded_file)
             issues = self.analyze_contract_text(text)
-
-            response_data = {
-                "valid": len(issues) == 0,
-                "issues": issues,
-            }
-            return response_data, 200  
+            return {"valid": len(issues) == 0, "issues": issues}, 200  
 
         except Exception as e:
             return {"error": f"Failed to process document: {str(e)}"}, 500
@@ -72,22 +56,19 @@ class CheckDocumentResource(Resource):
         """
         Extracts text from an image, PDF, or DOCX using EasyOCR and python-docx.
         """
+        reader = self.get_reader()
+
         if uploaded_file.mimetype.startswith("image/"):
             image = Image.open(uploaded_file)
-            text = self.reader.readtext(image, detail=0)
-            text = " ".join(text)  
+            text = reader.readtext(image, detail=0)
+            text = " ".join(text)
 
         elif uploaded_file.mimetype == "application/pdf":
             pdf_bytes = uploaded_file.read()
-            images = convert_from_bytes(pdf_bytes, fmt='jpeg')
-            
-            # Use only one pdf page
-            image = images[0]
-            text = self.reader.readtext(image, detail=0)
+            images = convert_from_bytes(pdf_bytes, fmt='jpeg', dpi=100)  # Reduce DPI to lower memory usage
+            image = images[0]  # Process only the first page
+            text = reader.readtext(image, detail=0)
             text = " ".join(text)
-            
-            # Note: OCR for multiple pdf pages took too long 
-            # text = " ".join([" ".join(self.reader.readtext(img, detail=0)) for img in images[]])
 
         elif uploaded_file.mimetype == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
             doc = docx.Document(uploaded_file)
@@ -96,7 +77,6 @@ class CheckDocumentResource(Resource):
         else:
             raise ValueError("Unsupported file format")
 
-        print("text from OCR", text[:20])
         return text
 
     def analyze_contract_text(self, text):
@@ -115,9 +95,4 @@ class CheckDocumentResource(Resource):
             "ลูกจ้างจะได้รับเงินค่าล่วงเวลาในอัตราเดียวกันกับค่าจ้างปกติ": "พบการไม่จ่ายค่าล่วงเวลาในอัตราที่สูงกว่าค่าจ้างปกติ",
         }
 
-        detected_issues = [
-            issue for rule, issue in possible_issues.items() if rule in text
-        ]
-
-        return detected_issues
-
+        return [issue for rule, issue in possible_issues.items() if rule in text]
