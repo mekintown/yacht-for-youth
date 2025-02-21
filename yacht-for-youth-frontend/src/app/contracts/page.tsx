@@ -70,7 +70,7 @@ export default function CheckContractPage() {
         </h1>
 
         <p className="text-gray-600 mb-4">
-          อัปโหลดเอกสารจ้างงาน (DOCX/PDF) เพื่อตรวจสอบความเป็นธรรม
+          อัปโหลดเอกสารจ้างงาน (DOCX/PNG/PDF) เพื่อตรวจสอบความเป็นธรรม
           และแจ้งเตือนเมื่อมีเงื่อนไขผิดกฎหมายหรือมีปัญหา
         </p>
 
@@ -80,15 +80,6 @@ export default function CheckContractPage() {
             ตัวอย่างไฟล์สำหรับตรวจสอบ:
           </p>
           <ul className="list-disc list-inside text-blue-600">
-            <li>
-              <a
-                href="/example-contract/wrong_contract.pdf"
-                download
-                className="underline"
-              >
-                ดาวน์โหลดตัวอย่างเอกสารที่ผิด PDF
-              </a>
-            </li>
             <li>
               <a
                 href="/example-contract/wrong_contract.docx"
