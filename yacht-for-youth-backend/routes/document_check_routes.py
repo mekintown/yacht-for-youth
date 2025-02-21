@@ -27,7 +27,10 @@ class CheckDocumentResource(Resource):
     def get_reader(self):
         if CheckDocumentResource.reader is None:
             print("Loading EasyOCR model into memory...")
-            CheckDocumentResource.reader = easyocr.Reader(["th", "en"], model_storage_directory=MODEL_STORAGE_PATH)
+            
+            CheckDocumentResource.reader = easyocr.Reader(
+            ["th", "en"], model_storage_directory=MODEL_STORAGE_PATH, download_enabled=False, detector="dbnet18" 
+        )
         return CheckDocumentResource.reader
 
     def post(self):
