@@ -16,10 +16,13 @@ class CheckDocumentResource(Resource):
         self.ensure_model_persistent()
 
     def ensure_model_persistent(self):
-        if not os.path.exists(MODEL_STORAGE_PATH):
-            print("Downloading EasyOCR model for the first time...")
-            os.makedirs(MODEL_STORAGE_PATH, exist_ok=True)
-            easyocr.Reader(["th", "en"], model_storage_directory=MODEL_STORAGE_PATH)
+        if os.path.exists(MODEL_STORAGE_PATH) and len(os.listdir(MODEL_STORAGE_PATH)) > 0:
+            print("EasyOCR model already exists in persistent storage. Skipping download.")
+            return
+        
+        print("Downloading EasyOCR model for the first time...")
+        os.makedirs(MODEL_STORAGE_PATH, exist_ok=True)
+        easyocr.Reader(["th", "en"], model_storage_directory=MODEL_STORAGE_PATH)
 
     def get_reader(self):
         if CheckDocumentResource.reader is None:
