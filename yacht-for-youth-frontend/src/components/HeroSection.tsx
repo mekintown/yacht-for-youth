@@ -20,7 +20,7 @@ export default function HeroSection() {
         Yacht for Youth
       </h1>
       <h1 className="text-center text-3xl text-accent font-semibold">
-        เรือยอชต์แห่งโอกาสสำหรับเยาวชน
+        งานปลอดภัยสำหรับเยาวชน ทุกโอกาสเริ่มต้นที่นี่
       </h1>
     </motion.div>
   );

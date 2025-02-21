@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -19,10 +20,8 @@ import { API_BASE_URL } from "@/constants/api";
 export default function CheckContractPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [result, setResult] = useState<any>(null);
   const [errorMsg, setErrorMsg] = useState("");
-
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,7 +46,6 @@ export default function CheckContractPage() {
       const formData = new FormData();
       formData.append("file", selectedFile);
 
-      // POST request to your mock endpoint
       const res = await axios.post(
         `${API_BASE_URL}/check-labor-contract`,
         formData,
@@ -76,6 +74,42 @@ export default function CheckContractPage() {
           และแจ้งเตือนเมื่อมีเงื่อนไขผิดกฎหมายหรือมีปัญหา
         </p>
 
+        {/* Example Files */}
+        <div className="mb-4">
+          <p className="text-gray-700 font-medium">
+            ตัวอย่างไฟล์สำหรับตรวจสอบ:
+          </p>
+          <ul className="list-disc list-inside text-blue-600">
+            <li>
+              <a
+                href="/example-contract/wrong_contract.pdf"
+                download
+                className="underline"
+              >
+                ดาวน์โหลดตัวอย่างเอกสารที่ผิด PDF
+              </a>
+            </li>
+            <li>
+              <a
+                href="/example-contract/wrong_contract.docx"
+                download
+                className="underline"
+              >
+                ดาวน์โหลดตัวอย่างเอกสารที่ผิด DOCX
+              </a>
+            </li>
+            <li>
+              <a
+                href="/example-contract/good_contract.docx"
+                download
+                className="underline"
+              >
+                ดาวน์โหลดตัวอย่างเอกสารที่ถูกต้อง DOCX
+              </a>
+            </li>
+          </ul>
+        </div>
+
         {/* File Input */}
         <label className="block mb-2 text-gray-700 font-medium">
           เลือกไฟล์ที่ต้องการตรวจสอบ
@@ -86,7 +120,6 @@ export default function CheckContractPage() {
           className="mb-4 w-full border border-gray-300 rounded-md p-2"
         />
 
-        {/* Shadcn Button for uploading */}
         <Button
           variant="default"
           className="w-full"
@@ -96,13 +129,11 @@ export default function CheckContractPage() {
           {isUploading ? "กำลังตรวจสอบ..." : "อัปโหลดเอกสารเพื่อตรวจสอบ"}
         </Button>
 
-        {/* Error Message */}
         {errorMsg && (
           <div className="mt-4 text-red-600 font-semibold">{errorMsg}</div>
         )}
       </div>
 
-      {/* Use shadcn/ui Dialog for the modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <AnimatePresence>
           {isModalOpen && (
@@ -132,8 +163,7 @@ export default function CheckContractPage() {
                         พบปัญหาบางอย่างในเอกสาร
                       </p>
                     )}
-
-                    {result.issues && result.issues.length > 0 && (
+                    {result.issues?.length > 0 && (
                       <div className="mt-4">
                         <p className="text-gray-700 font-medium mb-1">
                           พบเงื่อนไขที่อาจมีปัญหา:
@@ -156,8 +186,6 @@ export default function CheckContractPage() {
                     ไม่พบข้อมูลผลการตรวจสอบ
                   </div>
                 )}
-
-                {/* Use a shadcn "DialogClose" or our custom Button */}
                 <DialogClose asChild>
                   <Button variant="default" className="mt-6">
                     ปิด
