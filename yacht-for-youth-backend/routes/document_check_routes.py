@@ -5,8 +5,9 @@ from pdf2image import convert_from_bytes
 from PIL import Image
 import docx
 import os
+import numpy as np
 
-MODEL_STORAGE_PATH = "/var/data/easyocr_model"
+MODEL_STORAGE_PATH = "./var/data/easyocr_model"
 
 class CheckDocumentResource(Resource):
     # Static class variable to hold the model in memory once
@@ -66,6 +67,7 @@ class CheckDocumentResource(Resource):
 
         if uploaded_file.mimetype.startswith("image/"):
             image = Image.open(uploaded_file)
+            image = np.array(image)
             text = reader.readtext(image, detail=0)
             text = " ".join(text)
 
