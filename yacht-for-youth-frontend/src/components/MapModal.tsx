@@ -82,7 +82,7 @@ export default function MapModal({
           >
             {/* MapTiler tile layer (modern style) */}
             <TileLayer
-              url={`https://api.maptiler.com/maps/streets/256/{z}/{x}/{y}.png?key=PVHAz6aj7lKKVO4QLzEu`}
+              url={`https://api.maptiler.com/maps/streets/256/{z}/{x}/{y}.png?key=${process.env.NEXT_PUBLIC_MAP_API_KEY}`}
             />
             <Marker position={markerPos} />
             <MapClickHandler onMapClick={handleMapClick} />
