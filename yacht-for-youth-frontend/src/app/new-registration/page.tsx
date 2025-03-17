@@ -103,6 +103,7 @@ export default function NewRegistrationPage() {
   const handleBack = () => setStep((prev) => prev - 1);
 
   /** Final submission => sets "submitted" for employees or finishes for employer’s page */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleSubmit = () => {
     setSubmitted(true);
   };
