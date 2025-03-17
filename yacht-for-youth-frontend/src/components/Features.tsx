@@ -5,6 +5,13 @@ import { Button, buttonVariants } from "@/components/ui/button";
 
 const features = [
   {
+    title: "📝 Screen นายจ้าง & เด็ก",
+    description:
+      "ลงทะเบียนเป็นนายจ้าง หรือ เยาวชน เพื่อเข้าใช้งานระบบและค้นหาโอกาสที่เหมาะสม",
+    link: "/new-registration",
+    color: "gradient",
+  },
+  {
     title: "📄 ตรวจสอบเอกสารจ้างงาน",
     description:
       "สแกนเอกสารจ้างงานดูว่ามีความเป็นธรรม และแจ้งเตือนเมื่อผิดกฎหมาย",
@@ -35,7 +42,7 @@ export default function Features() {
       </div>
 
       {/* Feature Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {features.map((feature, index) => (
           <motion.div
             key={index}
