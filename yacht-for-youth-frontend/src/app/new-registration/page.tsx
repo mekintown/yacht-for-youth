@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -11,7 +13,7 @@ const MapModal = dynamic(() => import("../../components/MapModal"), {
   ssr: false,
 });
 
-/** Example job categories for step 3 if not employer */
+/** Example job categories for employees (step 3). */
 const jobCategories = [
   {
     id: 1,
@@ -60,66 +62,99 @@ const jobCategories = [
   },
 ];
 
+/** Example job categories for the employer's "ระบุประเภทงาน" field. */
+const employerJobTypes = [
+  "งานปั๊มโลหะ", // forbidden
+  "แคชเชียร์",
+  "พนักงานขายแผนกของเล่น",
+  "ผู้ช่วยคลังสินค้า",
+  "Designer",
+  "บาริสต้า",
+  "พนักงานเสิร์ฟ",
+  "ผู้ช่วยครัว",
+  "สตาฟงานคอนเสิร์ต",
+  "Customer Support",
+  "ควบคุมเครื่องเล่นสวนสนุก",
+];
+
 export default function NewRegistrationPage() {
+  const searchParams = useSearchParams();
+  const roleParam = searchParams.get("role"); // "employer" or "employee"
+  const isEmployer = roleParam === "employer";
+
+  // Steps: if employer => up to step4, else => up to step3
   const [step, setStep] = useState(1);
 
   // STEP 1: Personal info
   const [fullName, setFullName] = useState("");
   const [birthdate, setBirthdate] = useState("");
-  const [isEmployer, setIsEmployer] = useState(false);
 
-  // Personal location (user’s home/current location)
+  // Personal location
   const [coords, setCoords] = useState<[number, number] | null>(null);
   const [address, setAddress] = useState("");
   const [mapModalOpen, setMapModalOpen] = useState(false);
 
   // STEP 2: Documents
-  const [, setIdPhotoFile] = useState<File | null>(null);
+  const [idPhotoFile, setIdPhotoFile] = useState<File | null>(null);
   const [nationalId, setNationalId] = useState("");
   const [bankAccount, setBankAccount] = useState("");
   const [emergencyContact, setEmergencyContact] = useState("");
 
-  // STEP 3 (Employer flow: job details / Non-employer flow: pick jobs)
-  const [jobTitle, setJobTitle] = useState("");
+  // STEP 3 (Employer => job details, Employee => pick categories)
+  // Employer fields
+  const [workPhotoFile, setWorkPhotoFile] = useState<File | null>(null);
+  const [selectedJobType, setSelectedJobType] = useState("");
+  const [showForbiddenModal, setShowForbiddenModal] = useState(false);
+
   const [jobDescription, setJobDescription] = useState("");
 
-  // Employer’s separate map location
+  // Employer map location
   const [workCoords, setWorkCoords] = useState<[number, number] | null>(null);
   const [workAddress, setWorkAddress] = useState("");
   const [workMapOpen, setWorkMapOpen] = useState(false);
   const [jobLocation, setJobLocation] = useState("");
 
-  // If not employer => user picks categories
+  // Employee picks job categories
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
 
-  // Submission final states
+  // Submissions
   const [submitted, setSubmitted] = useState(false);
 
-  /** Navigation */
-  const handleNext = () => {
-    // Simple approach: increment step.
-    setStep((prev) => prev + 1);
-  };
+  /** Step navigation */
+  const handleNext = () => setStep((prev) => prev + 1);
   const handleBack = () => setStep((prev) => prev - 1);
 
-  /** Final submission => sets "submitted" for employees or finishes for employer’s page */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  /** Final submission => set 'submitted' */
   const handleSubmit = () => {
     setSubmitted(true);
   };
 
-  /** Toggle categories for non-employer’s step */
+  /** Toggle categories for employees. */
   const toggleCategory = (id: number) => {
     setSelectedCategories((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   };
 
+  /** If user picks "งานปั๊มโลหะ" => pop up warning */
+  const handleJobTypeChange = (value: string) => {
+    setSelectedJobType(value);
+    if (value === "งานปั๊มโลหะ") {
+      setShowForbiddenModal(true);
+    } else {
+      setShowForbiddenModal(false);
+    }
+  };
+
+  // Whenever role changes in the query, reset step
+  useEffect(() => {
+    setStep(1);
+  }, [roleParam]);
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 mt-12">
-      {/* Step indicator: up to 3 for employees, up to 4 for employers */}
+      {/* Step indicator */}
       <div className="mb-4 flex items-center justify-center space-x-2">
-        {/* We'll dynamically highlight these based on user role */}
         {isEmployer
           ? [1, 2, 3, 4].map((item) => (
               <div
@@ -154,7 +189,7 @@ export default function NewRegistrationPage() {
             1. ข้อมูลส่วนตัว
           </h2>
 
-          {/* Full name */}
+          {/* Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
               ชื่อ - สกุล
@@ -168,7 +203,7 @@ export default function NewRegistrationPage() {
             />
           </div>
 
-          {/* Personal location map */}
+          {/* Personal location */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               สถานที่ปัจจุบัน
@@ -183,17 +218,19 @@ export default function NewRegistrationPage() {
             ) : (
               <p className="text-sm text-gray-500">ยังไม่ได้เลือกตำแหน่ง</p>
             )}
-            <div className="mt-2">
-              <Button variant="outline" onClick={() => setMapModalOpen(true)}>
-                เลือกตำแหน่งจากแผนที่
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              onClick={() => setMapModalOpen(true)}
+              className="mt-2"
+            >
+              เลือกตำแหน่งจากแผนที่
+            </Button>
           </div>
 
           {/* Birthdate */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              วันเกิด (เช่น 01/09/2548)
+              วันเกิด (ตัวอย่าง: 01/09/2548)
             </label>
             <input
               type="text"
@@ -202,19 +239,6 @@ export default function NewRegistrationPage() {
               onChange={(e) => setBirthdate(e.target.value)}
               placeholder="DD/MM/YYYY"
             />
-          </div>
-
-          {/* Employer? */}
-          <div className="flex items-center space-x-3">
-            <input
-              type="checkbox"
-              className="h-4 w-4"
-              checked={isEmployer}
-              onChange={(e) => setIsEmployer(e.target.checked)}
-            />
-            <label className="text-sm font-medium text-gray-700">
-              ฉันเป็นนายจ้าง (Employer)
-            </label>
           </div>
 
           <div className="flex justify-end gap-4 pt-4">
@@ -237,14 +261,14 @@ export default function NewRegistrationPage() {
             <input
               type="file"
               accept="image/*"
-              onChange={(e) =>
-                e.target.files ? setIdPhotoFile(e.target.files[0]) : null
-              }
+              onChange={(e) => {
+                if (e.target.files) setIdPhotoFile(e.target.files[0]);
+              }}
               className="block w-full text-sm text-gray-500
-                         file:mr-4 file:rounded-md file:border-0
-                         file:bg-gray-100 file:py-2 file:px-4
-                         file:text-sm file:font-semibold
-                         hover:file:bg-gray-200"
+                file:mr-4 file:rounded-md file:border-0
+                file:bg-gray-100 file:py-2 file:px-4
+                file:text-sm file:font-semibold
+                hover:file:bg-gray-200"
             />
           </div>
 
@@ -296,27 +320,52 @@ export default function NewRegistrationPage() {
         </div>
       )}
 
-      {/* STEP 3 for Employer => Job Details
-          STEP 3 for Employee => Pick Jobs */}
+      {/* STEP 3 => Employer job details OR Employee picks categories */}
       {step === 3 && isEmployer && (
         <div className="space-y-6">
           <h2 className="text-xl font-semibold text-gray-800">
             3. รายละเอียดงาน (นายจ้าง)
           </h2>
 
+          {/* 1) อัพรูปสถานที่ทำงาน */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              ชื่อตำแหน่งงาน
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              อัพรูปสถานที่ทำงาน
             </label>
             <input
-              type="text"
-              className="mt-1 w-full rounded-md border p-2"
-              value={jobTitle}
-              onChange={(e) => setJobTitle(e.target.value)}
-              placeholder="เช่น พนักงานเสิร์ฟ"
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                if (e.target.files) setWorkPhotoFile(e.target.files[0]);
+              }}
+              className="block w-full text-sm text-gray-500
+                file:mr-4 file:rounded-md file:border-0
+                file:bg-gray-100 file:py-2 file:px-4
+                file:text-sm file:font-semibold
+                hover:file:bg-gray-200"
             />
           </div>
 
+          {/* 2) ระบุประเภทงาน */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              ระบุประเภทงาน
+            </label>
+            <select
+              className="mt-1 w-full rounded-md border p-2"
+              value={selectedJobType}
+              onChange={(e) => handleJobTypeChange(e.target.value)}
+            >
+              <option value="">-- กรุณาเลือก --</option>
+              {employerJobTypes.map((job) => (
+                <option key={job} value={job}>
+                  {job}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 3) รายละเอียดงาน */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
               รายละเอียดงาน
@@ -329,7 +378,7 @@ export default function NewRegistrationPage() {
             />
           </div>
 
-          {/* Employer map location */}
+          {/* 4) สถานที่ทำงาน (map picker) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               สถานที่ทำงาน
@@ -352,15 +401,16 @@ export default function NewRegistrationPage() {
               onChange={(e) => setJobLocation(e.target.value)}
               placeholder="ระบุที่อยู่หรือจุดสังเกต (ถ้ามี)"
             />
-
-            <div className="mt-2">
-              <Button variant="outline" onClick={() => setWorkMapOpen(true)}>
-                เลือกตำแหน่งจากแผนที่
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              onClick={() => setWorkMapOpen(true)}
+              className="mt-2"
+            >
+              เลือกตำแหน่งจากแผนที่
+            </Button>
           </div>
 
-          {/* Next => show "waiting" page (step=4) */}
+          {/* Next => Step 4 => waiting */}
           <div className="flex justify-between gap-4 pt-4">
             <Button variant="outline" onClick={handleBack}>
               ย้อนกลับ
@@ -370,6 +420,7 @@ export default function NewRegistrationPage() {
         </div>
       )}
 
+      {/* Employee picks categories */}
       {step === 3 && !isEmployer && (
         <div className="space-y-6">
           <h2 className="text-xl font-semibold text-gray-800">
@@ -410,12 +461,11 @@ export default function NewRegistrationPage() {
             <Button variant="outline" onClick={handleBack}>
               ย้อนกลับ
             </Button>
-            {/* Next => directly final => skip waiting */}
             <Button
               onClick={() => {
-                // Must have at least 3
                 if (selectedCategories.length < 3) return;
-                setStep(99); // We'll treat step=99 as "done"
+                // Immediately final for employees
+                setStep(99);
                 setSubmitted(true);
               }}
             >
@@ -425,7 +475,7 @@ export default function NewRegistrationPage() {
         </div>
       )}
 
-      {/* STEP 4 => "กำลังตรวจสอบ/รอผล" => final page for Employer */}
+      {/* STEP 4 => For Employer => waiting */}
       {step === 4 && isEmployer && !submitted && (
         <div className="space-y-6">
           <h2 className="text-xl font-semibold text-gray-800">
@@ -440,22 +490,15 @@ export default function NewRegistrationPage() {
           </p>
 
           <div className="flex justify-end gap-4 pt-4">
-            {/* Could show a "back" if you want, or hide it */}
             <Button variant="outline" onClick={handleBack}>
               ย้อนกลับ
             </Button>
-            <Button
-              onClick={() => {
-                setSubmitted(true);
-              }}
-            >
-              เสร็จสิ้น
-            </Button>
+            <Button onClick={handleSubmit}>เสร็จสิ้น</Button>
           </div>
         </div>
       )}
 
-      {/* Final "Done" page for employees or after waiting for employer */}
+      {/* Final => "submitted" screen */}
       {submitted && (
         <div className="space-y-4 text-center mt-8">
           <h2 className="text-2xl font-bold text-green-600">
@@ -468,7 +511,7 @@ export default function NewRegistrationPage() {
         </div>
       )}
 
-      {/* Personal map modal (Step 1) */}
+      {/* Map modal (personal) */}
       {mapModalOpen && (
         <MapModal
           onClose={() => setMapModalOpen(false)}
@@ -480,7 +523,7 @@ export default function NewRegistrationPage() {
         />
       )}
 
-      {/* Employer map modal (Step 3) */}
+      {/* Map modal (work) */}
       {workMapOpen && (
         <MapModal
           onClose={() => setWorkMapOpen(false)}
@@ -490,6 +533,29 @@ export default function NewRegistrationPage() {
             setWorkMapOpen(false);
           }}
         />
+      )}
+
+      {/* Forbidden job popup */}
+      {showForbiddenModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
+          <div className="bg-white rounded-md p-6 max-w-md w-full text-center space-y-4">
+            <h3 className="text-xl font-semibold text-red-600">
+              งานปั๊มโลหะเป็นงานต้องห้าม
+            </h3>
+            <p className="text-gray-700">
+              ไม่สามารถรับงานนี้ได้ในระบบ
+              เนื่องจากเสี่ยงและผิดกฎหมายสำหรับเยาวชน
+            </p>
+            <Button
+              onClick={() => {
+                setShowForbiddenModal(false);
+                setSelectedJobType(""); // reset
+              }}
+            >
+              ปิด
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );

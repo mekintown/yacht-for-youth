@@ -25,12 +25,16 @@ export default function Navbar() {
       {/* Navigation Links */}
       <div className="flex gap-8 items-center justify-center">
         <ul className="hidden md:flex gap-8 text-lg text-accent font-medium">
+          {/* Link to Employer Features */}
           <li className="hover:text-primary transition-all duration-200 cursor-pointer">
-            <Link href="/">Home</Link>
+            <Link href="/employer-features">นายจ้าง</Link>
+          </li>
+          {/* Link to Youth Features */}
+          <li className="hover:text-primary transition-all duration-200 cursor-pointer">
+            <Link href="/youth-features">เยาวชน</Link>
           </li>
         </ul>
 
-        {/* CTA Button */}
         <Link href="/join-us">
           <motion.button
             whileHover={{ scale: 1.05 }}
