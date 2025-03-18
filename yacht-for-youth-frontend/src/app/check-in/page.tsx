@@ -1,0 +1,435 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Camera, Clock, CheckCircle2, XCircle } from "lucide-react";
+
+type Coordinates = {
+  lat: number;
+  lng: number;
+};
+
+export default function WorkHourMonitoringPage() {
+  // States
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [checkInTime, setCheckInTime] = useState<Date | null>(null);
+  const [checkOutTime, setCheckOutTime] = useState<Date | null>(null);
+  const [isCheckedIn, setIsCheckedIn] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState<
+    "idle" | "success" | "failed"
+  >("idle");
+  const [workHours, setWorkHours] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  // const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
+
+  // const [workplaceLocation] = useState<Coordinates>({
+  //   lat: 13.7563, // Default workplace coordinates (Bangkok)
+  //   lng: 100.5018,
+  // });
+
+  // Refs
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  // Update current time every minute
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Calculate distance between two coordinates using Haversine formula
+  // const calculateDistance = (
+  //   lat1: number,
+  //   lon1: number,
+  //   lat2: number,
+  //   lon2: number
+  // ): number => {
+  //   const R = 6371; // Earth radius in km
+  //   const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  //   const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  //   const a =
+  //     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+  //     Math.cos((lat1 * Math.PI) / 180) *
+  //       Math.cos((lat2 * Math.PI) / 180) *
+  //       Math.sin(dLon / 2) *
+  //       Math.sin(dLon / 2);
+  //   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  //   return R * c; // Distance in km
+  // };
+
+  // Format time for display
+  const formatTime = (date: Date | null): string => {
+    if (!date) return "--:--";
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
+  // Calculate duration between check-in and check-out
+  const calculateWorkHours = (checkIn: Date, checkOut: Date): string => {
+    const diff = (checkOut.getTime() - checkIn.getTime()) / 1000 / 60 / 60;
+    const hours = Math.floor(diff);
+    const minutes = Math.floor((diff - hours) * 60);
+
+    return `${hours}h ${minutes}m`;
+  };
+
+  // Start camera for face recognition
+  const startCamera = async (): Promise<void> => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" },
+      });
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+
+      streamRef.current = stream;
+      setIsCameraActive(true);
+    } catch (error) {
+      console.error("Error accessing camera:", error);
+    }
+  };
+
+  // Stop camera
+  const stopCamera = (): void => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+
+    setIsCameraActive(false);
+  };
+
+  // Capture image for verification and get location
+  const captureImage = async (): Promise<void> => {
+    if (!videoRef.current) return;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.drawImage(videoRef.current, 0, 0);
+      const imageData = canvas.toDataURL("image/jpeg");
+      // setCapturedImage(imageData);
+
+      try {
+        // Get current location
+        const position = await new Promise<GeolocationPosition>(
+          (resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true,
+              timeout: 5000,
+              maximumAge: 0,
+            });
+          }
+        );
+
+        const currentCoords = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+
+        // Save user location to state for display
+        setUserLocation(currentCoords);
+
+        processVerification(imageData, currentCoords);
+      } catch (error) {
+        console.error("Error getting location:", error);
+        setVerificationStatus("failed");
+        setIsProcessing(false);
+        setTimeout(() => {
+          setVerificationStatus("idle");
+          stopCamera();
+        }, 3000);
+      }
+    }
+  };
+
+  // Verification process with location check
+  const processVerification = (
+    imageData: string,
+    currentCoords: Coordinates
+  ): void => {
+    setIsProcessing(true);
+
+    // Simulate API call
+    setTimeout(() => {
+      // Always verify face and location as true
+      const isFaceVerified = imageData !== null; // Simulate face verification
+      const isLocationVerified = currentCoords.lat > 0 && currentCoords.lng > 0; // Simulate location verification
+
+      const isVerified = isFaceVerified && isLocationVerified;
+
+      if (isVerified) {
+        setVerificationStatus("success");
+      } else {
+        setVerificationStatus("failed");
+        console.log(
+          `Verification failed - Face: ${isFaceVerified}, Location: ${isLocationVerified}`
+        );
+      }
+
+      // Existing verification logic for check in/out
+      if (isVerified) {
+        if (isCheckedIn) {
+          const checkOutAt = new Date();
+          setCheckOutTime(checkOutAt);
+          setIsCheckedIn(false);
+
+          if (checkInTime) {
+            setWorkHours(calculateWorkHours(checkInTime, checkOutAt));
+            const workHoursDecimal =
+              (checkOutAt.getTime() - checkInTime.getTime()) / 1000 / 60 / 60;
+            if (workHoursDecimal > 8) {
+              console.log(
+                "OVERTIME ALERT:",
+                workHoursDecimal - 8,
+                "hours overtime"
+              );
+            }
+          }
+        } else {
+          setCheckInTime(new Date());
+          setCheckOutTime(null);
+          setWorkHours(null);
+          setIsCheckedIn(true);
+        }
+      }
+
+      setIsProcessing(false);
+      setTimeout(() => {
+        setVerificationStatus("idle");
+        stopCamera();
+      }, 3000);
+    }, 2000);
+  };
+
+  // Handle check in/out button click
+  const handleCheckInOut = (): void => {
+    // setCapturedImage(null);
+    setVerificationStatus("idle");
+    startCamera();
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-12">
+      {/* Heading / Hero */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="text-center mb-10 px-4"
+      >
+        <h1 className="text-3xl md:text-4xl font-bold text-accent mb-2">
+          บันทึกเวลาทำงาน
+        </h1>
+        <p className="text-gray-600 max-w-xl mx-auto">
+          ระบบบันทึกเวลาเข้า-ออกงานด้วยการจดจำใบหน้าและตรวจสอบตำแหน่งพิกัด
+          เพื่อความแม่นยำและโปร่งใส
+        </p>
+      </motion.div>
+
+      {/* Current Time Display */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
+        className="mb-6 flex items-center justify-center"
+      >
+        <Clock className="mr-2 text-primary" />
+        <span className="text-xl font-semibold">
+          {currentTime.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </span>
+      </motion.div>
+
+      {/* Display User Location if available */}
+      {userLocation && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
+          className="mb-6 flex items-center justify-center"
+        >
+          <Badge variant="default">
+            ตำแหน่งของคุณ: {userLocation.lat.toFixed(4)},{" "}
+            {userLocation.lng.toFixed(4)}
+          </Badge>
+        </motion.div>
+      )}
+
+      {/* Check In/Out Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
+        className="w-full max-w-md mb-8 px-4"
+      >
+        <Card className="p-6 shadow-md">
+          {/* Status Display */}
+          <div className="mb-6 text-center">
+            <Badge
+              variant={isCheckedIn ? "default" : "outline"}
+              className="mb-2 px-4 py-1"
+            >
+              {isCheckedIn ? "เข้างานแล้ว" : "ยังไม่ได้เข้างาน"}
+            </Badge>
+            <div className="flex justify-center gap-8 mt-4">
+              <div className="text-center">
+                <p className="text-sm text-gray-500">เวลาเข้างาน</p>
+                <p className="text-lg font-medium">{formatTime(checkInTime)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-gray-500">เวลาออกงาน</p>
+                <p className="text-lg font-medium">
+                  {formatTime(checkOutTime)}
+                </p>
+              </div>
+            </div>
+            {workHours && (
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <p className="text-sm text-gray-500">ชั่วโมงทำงานวันนี้</p>
+                <p className="text-lg font-semibold text-primary">
+                  {workHours}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Camera Section */}
+          {isCameraActive && (
+            <div className="relative mb-4">
+              <div className="bg-black rounded-lg overflow-hidden aspect-video">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              {verificationStatus === "success" && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
+                  <div className="text-center text-white">
+                    <CheckCircle2
+                      className="mx-auto mb-2 text-green-400"
+                      size={48}
+                    />
+                    <p className="font-medium">
+                      {isCheckedIn
+                        ? "บันทึกเวลาเข้างานสำเร็จ"
+                        : "บันทึกเวลาออกงานสำเร็จ"}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {verificationStatus === "failed" && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
+                  <div className="text-center text-white">
+                    <XCircle className="mx-auto mb-2 text-red-400" size={48} />
+                    <p className="font-medium">ยืนยันตัวตนไม่สำเร็จ</p>
+                    <p className="text-sm mt-1">กรุณาลองใหม่อีกครั้ง</p>
+                  </div>
+                </div>
+              )}
+
+              {verificationStatus === "idle" && !isProcessing && (
+                <Button
+                  className="absolute bottom-4 left-1/2 transform -translate-x-1/2"
+                  onClick={captureImage}
+                >
+                  <Camera className="mr-2" size={18} />
+                  ถ่ายภาพยืนยันตัวตน
+                </Button>
+              )}
+
+              {isProcessing && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded-lg">
+                  <div className="animate-pulse text-white text-center">
+                    <p>กำลังตรวจสอบ...</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Action Button */}
+          {!isCameraActive && (
+            <Button
+              className="w-full"
+              onClick={handleCheckInOut}
+              variant={isCheckedIn ? "destructive" : "default"}
+            >
+              {isCheckedIn ? "บันทึกเวลาออกงาน" : "บันทึกเวลาเข้างาน"}
+            </Button>
+          )}
+        </Card>
+      </motion.div>
+
+      {/* Work History Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut", delay: 0.3 }}
+        className="w-full max-w-md px-4"
+      >
+        <Card className="p-6 shadow-md">
+          <h2 className="text-lg font-semibold text-gray-700 mb-4">
+            ประวัติการทำงานล่าสุด
+          </h2>
+
+          {/* This would be populated from API in a real app */}
+          <ul className="space-y-3">
+            <li className="flex justify-between items-center border-b border-gray-100 pb-2">
+              <div>
+                <p className="font-medium">วันจันทร์, 17 มี.ค. 2025</p>
+                <p className="text-sm text-gray-500">8:30 - 17:45</p>
+              </div>
+              <div className="text-right">
+                <p className="font-semibold">9h 15m</p>
+                <Badge variant="outline" className="text-amber-600 bg-amber-50">
+                  ล่วงเวลา 1h 15m
+                </Badge>
+              </div>
+            </li>
+            <li className="flex justify-between items-center border-b border-gray-100 pb-2">
+              <div>
+                <p className="font-medium">วันศุกร์, 14 มี.ค. 2025</p>
+                <p className="text-sm text-gray-500">8:45 - 16:30</p>
+              </div>
+              <div className="text-right">
+                <p className="font-semibold">7h 45m</p>
+              </div>
+            </li>
+            <li className="flex justify-between items-center">
+              <div>
+                <p className="font-medium">วันพฤหัสบดี, 13 มี.ค. 2025</p>
+                <p className="text-sm text-gray-500">9:00 - 18:15</p>
+              </div>
+              <div className="text-right">
+                <p className="font-semibold">9h 15m</p>
+                <Badge variant="outline" className="text-amber-600 bg-amber-50">
+                  ล่วงเวลา 1h 15m
+                </Badge>
+              </div>
+            </li>
+          </ul>
+        </Card>
+      </motion.div>
+    </div>
+  );
+}
