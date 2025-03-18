@@ -24,13 +24,7 @@ export default function WorkHourMonitoringPage() {
   >("idle");
   const [workHours, setWorkHours] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
-  // const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
-
-  // const [workplaceLocation] = useState<Coordinates>({
-  //   lat: 13.7563, // Default workplace coordinates (Bangkok)
-  //   lng: 100.5018,
-  // });
 
   // Refs
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -44,26 +38,6 @@ export default function WorkHourMonitoringPage() {
 
     return () => clearInterval(timer);
   }, []);
-
-  // Calculate distance between two coordinates using Haversine formula
-  // const calculateDistance = (
-  //   lat1: number,
-  //   lon1: number,
-  //   lat2: number,
-  //   lon2: number
-  // ): number => {
-  //   const R = 6371; // Earth radius in km
-  //   const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  //   const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  //   const a =
-  //     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-  //     Math.cos((lat1 * Math.PI) / 180) *
-  //       Math.cos((lat2 * Math.PI) / 180) *
-  //       Math.sin(dLon / 2) *
-  //       Math.sin(dLon / 2);
-  //   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  //   return R * c; // Distance in km
-  // };
 
   // Format time for display
   const formatTime = (date: Date | null): string => {
@@ -89,6 +63,11 @@ export default function WorkHourMonitoringPage() {
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current
+            ?.play()
+            .catch((e) => console.error("Error playing video:", e));
+        };
       }
 
       streamRef.current = stream;
@@ -120,7 +99,6 @@ export default function WorkHourMonitoringPage() {
     if (ctx) {
       ctx.drawImage(videoRef.current, 0, 0);
       const imageData = canvas.toDataURL("image/jpeg");
-      // setCapturedImage(imageData);
 
       try {
         // Get current location
@@ -164,19 +142,12 @@ export default function WorkHourMonitoringPage() {
 
     // Simulate API call
     setTimeout(() => {
-      // Always verify face and location as true
-      const isFaceVerified = imageData !== null; // Simulate face verification
-      const isLocationVerified = currentCoords.lat > 0 && currentCoords.lng > 0; // Simulate location verification
-
       const isVerified = true;
-      
+
       if (isVerified) {
         setVerificationStatus("success");
       } else {
         setVerificationStatus("failed");
-        console.log(
-          `Verification failed - Face: ${isFaceVerified}, Location: ${isLocationVerified}`
-        );
       }
 
       // Existing verification logic for check in/out
@@ -216,7 +187,6 @@ export default function WorkHourMonitoringPage() {
 
   // Handle check in/out button click
   const handleCheckInOut = (): void => {
-    // setCapturedImage(null);
     setVerificationStatus("idle");
     startCamera();
   };
@@ -318,6 +288,7 @@ export default function WorkHourMonitoringPage() {
                   playsInline
                   muted
                   className="w-full h-full object-cover"
+                  style={{ transform: "scaleX(-1)" }} // Mirror the video for selfie view
                 />
               </div>
 
