@@ -3,6 +3,7 @@ import { IBM_Plex_Sans_Thai } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import "leaflet/dist/leaflet.css";
+import { Suspense } from "react";
 
 const ibmPlexSansThai = IBM_Plex_Sans_Thai({
   variable: "--font-ibm-plex-thai",
@@ -24,7 +25,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${ibmPlexSansThai.variable} font-sans antialiased`}>
         <Navbar />
-        <div className="pt-12">{children}</div>
+        <Suspense fallback={<div>Loading...</div>}>
+          <div className="pt-12">{children}</div>
+        </Suspense>
       </body>
     </html>
   );
