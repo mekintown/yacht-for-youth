@@ -142,7 +142,7 @@ export default function WorkHourMonitoringPage() {
 
     // Simulate API call
     setTimeout(() => {
-      const isVerified = true;
+      const isVerified = true || imageData || currentCoords; // Simulate verification logic
 
       if (isVerified) {
         setVerificationStatus("success");
