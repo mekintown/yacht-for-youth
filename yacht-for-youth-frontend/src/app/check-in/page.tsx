@@ -25,13 +25,12 @@ export default function WorkHourMonitoringPage() {
   const [workHours, setWorkHours] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  // New state to hold user's current location
   const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
 
-  const [workplaceLocation] = useState<Coordinates>({
-    lat: 13.7563, // Default workplace coordinates (Bangkok)
-    lng: 100.5018,
-  });
+  // const [workplaceLocation] = useState<Coordinates>({
+  //   lat: 13.7563, // Default workplace coordinates (Bangkok)
+  //   lng: 100.5018,
+  // });
 
   // Refs
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -47,33 +46,33 @@ export default function WorkHourMonitoringPage() {
   }, []);
 
   // Calculate distance between two coordinates using Haversine formula
-  const calculateDistance = (
-    lat1: number,
-    lon1: number,
-    lat2: number,
-    lon2: number
-  ) => {
-    const R = 6371; // Earth radius in km
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLon = ((lon2 - lon1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c; // Distance in km
-  };
+  // const calculateDistance = (
+  //   lat1: number,
+  //   lon1: number,
+  //   lat2: number,
+  //   lon2: number
+  // ): number => {
+  //   const R = 6371; // Earth radius in km
+  //   const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  //   const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  //   const a =
+  //     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+  //     Math.cos((lat1 * Math.PI) / 180) *
+  //       Math.cos((lat2 * Math.PI) / 180) *
+  //       Math.sin(dLon / 2) *
+  //       Math.sin(dLon / 2);
+  //   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  //   return R * c; // Distance in km
+  // };
 
   // Format time for display
-  const formatTime = (date: Date | null) => {
+  const formatTime = (date: Date | null): string => {
     if (!date) return "--:--";
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
   // Calculate duration between check-in and check-out
-  const calculateWorkHours = (checkIn: Date, checkOut: Date) => {
+  const calculateWorkHours = (checkIn: Date, checkOut: Date): string => {
     const diff = (checkOut.getTime() - checkIn.getTime()) / 1000 / 60 / 60;
     const hours = Math.floor(diff);
     const minutes = Math.floor((diff - hours) * 60);
@@ -82,7 +81,7 @@ export default function WorkHourMonitoringPage() {
   };
 
   // Start camera for face recognition
-  const startCamera = async () => {
+  const startCamera = async (): Promise<void> => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "user" },
@@ -100,7 +99,7 @@ export default function WorkHourMonitoringPage() {
   };
 
   // Stop camera
-  const stopCamera = () => {
+  const stopCamera = (): void => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
@@ -110,7 +109,7 @@ export default function WorkHourMonitoringPage() {
   };
 
   // Capture image for verification and get location
-  const captureImage = async () => {
+  const captureImage = async (): Promise<void> => {
     if (!videoRef.current) return;
 
     const canvas = document.createElement("canvas");
@@ -160,20 +159,19 @@ export default function WorkHourMonitoringPage() {
   const processVerification = (
     imageData: string,
     currentCoords: Coordinates
-  ) => {
+  ): void => {
     setIsProcessing(true);
 
     // Simulate API call
     setTimeout(() => {
       // Always verify face and location as true
-      const isFaceVerified = true;
-      const isLocationVerified = true;
+      const isFaceVerified = imageData !== null; // Simulate face verification
+      const isLocationVerified = currentCoords.lat > 0 && currentCoords.lng > 0; // Simulate location verification
 
       const isVerified = isFaceVerified && isLocationVerified;
 
       if (isVerified) {
         setVerificationStatus("success");
-        // ... rest of success logic
       } else {
         setVerificationStatus("failed");
         console.log(
@@ -217,7 +215,7 @@ export default function WorkHourMonitoringPage() {
   };
 
   // Handle check in/out button click
-  const handleCheckInOut = () => {
+  const handleCheckInOut = (): void => {
     setCapturedImage(null);
     setVerificationStatus("idle");
     startCamera();
