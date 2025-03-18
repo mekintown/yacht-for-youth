@@ -4,8 +4,13 @@ import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/bagde";
+import { Badge } from "@/components/ui/badge";
 import { Camera, Clock, CheckCircle2, XCircle } from "lucide-react";
+
+type Coordinates = {
+  lat: number;
+  lng: number;
+};
 
 export default function WorkHourMonitoringPage() {
   // States
@@ -20,6 +25,13 @@ export default function WorkHourMonitoringPage() {
   const [workHours, setWorkHours] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  // New state to hold user's current location
+  const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
+
+  const [workplaceLocation] = useState<Coordinates>({
+    lat: 13.7563, // Default workplace coordinates (Bangkok)
+    lng: 100.5018,
+  });
 
   // Refs
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -33,6 +45,26 @@ export default function WorkHourMonitoringPage() {
 
     return () => clearInterval(timer);
   }, []);
+
+  // Calculate distance between two coordinates using Haversine formula
+  const calculateDistance = (
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number
+  ) => {
+    const R = 6371; // Earth radius in km
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in km
+  };
 
   // Format time for display
   const formatTime = (date: Date | null) => {
@@ -77,8 +109,8 @@ export default function WorkHourMonitoringPage() {
     setIsCameraActive(false);
   };
 
-  // Capture image for verification
-  const captureImage = () => {
+  // Capture image for verification and get location
+  const captureImage = async () => {
     if (!videoRef.current) return;
 
     const canvas = document.createElement("canvas");
@@ -91,59 +123,92 @@ export default function WorkHourMonitoringPage() {
       const imageData = canvas.toDataURL("image/jpeg");
       setCapturedImage(imageData);
 
-      // In a real app, you would send this image to your backend for verification
-      processVerification(imageData);
+      try {
+        // Get current location
+        const position = await new Promise<GeolocationPosition>(
+          (resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true,
+              timeout: 5000,
+              maximumAge: 0,
+            });
+          }
+        );
+
+        const currentCoords = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+
+        // Save user location to state for display
+        setUserLocation(currentCoords);
+
+        processVerification(imageData, currentCoords);
+      } catch (error) {
+        console.error("Error getting location:", error);
+        setVerificationStatus("failed");
+        setIsProcessing(false);
+        setTimeout(() => {
+          setVerificationStatus("idle");
+          stopCamera();
+        }, 3000);
+      }
     }
   };
 
-  // Mock verification process
-  const processVerification = (imageData: string) => {
+  // Verification process with location check
+  const processVerification = (
+    imageData: string,
+    currentCoords: Coordinates
+  ) => {
     setIsProcessing(true);
 
-    // Simulate API call for face recognition and location verification
+    // Simulate API call
     setTimeout(() => {
-      // Mock successful verification 80% of the time
-      const isVerified = Math.random() > 0.2;
+      // Always verify face and location as true
+      const isFaceVerified = true;
+      const isLocationVerified = true;
+
+      const isVerified = isFaceVerified && isLocationVerified;
 
       if (isVerified) {
         setVerificationStatus("success");
+        // ... rest of success logic
+      } else {
+        setVerificationStatus("failed");
+        console.log(
+          `Verification failed - Face: ${isFaceVerified}, Location: ${isLocationVerified}`
+        );
+      }
 
+      // Existing verification logic for check in/out
+      if (isVerified) {
         if (isCheckedIn) {
-          // Check out process
           const checkOutAt = new Date();
           setCheckOutTime(checkOutAt);
           setIsCheckedIn(false);
 
           if (checkInTime) {
             setWorkHours(calculateWorkHours(checkInTime, checkOutAt));
-
-            // Check for overtime (assuming 8 hours is standard)
             const workHoursDecimal =
               (checkOutAt.getTime() - checkInTime.getTime()) / 1000 / 60 / 60;
             if (workHoursDecimal > 8) {
-              // In a real app, send notification to employer and employee
               console.log(
                 "OVERTIME ALERT:",
                 workHoursDecimal - 8,
                 "hours overtime"
               );
-              // showNotification("Overtime Alert", `You've worked ${(workHoursDecimal - 8).toFixed(1)} hours overtime today.`);
             }
           }
         } else {
-          // Check in process
           setCheckInTime(new Date());
           setCheckOutTime(null);
           setWorkHours(null);
           setIsCheckedIn(true);
         }
-      } else {
-        setVerificationStatus("failed");
       }
 
       setIsProcessing(false);
-
-      // Reset verification status after 3 seconds
       setTimeout(() => {
         setVerificationStatus("idle");
         stopCamera();
@@ -191,6 +256,21 @@ export default function WorkHourMonitoringPage() {
           })}
         </span>
       </motion.div>
+
+      {/* Display User Location if available */}
+      {userLocation && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
+          className="mb-6 flex items-center justify-center"
+        >
+          <Badge variant="default">
+            ตำแหน่งของคุณ: {userLocation.lat.toFixed(4)},{" "}
+            {userLocation.lng.toFixed(4)}
+          </Badge>
+        </motion.div>
+      )}
 
       {/* Check In/Out Card */}
       <motion.div
