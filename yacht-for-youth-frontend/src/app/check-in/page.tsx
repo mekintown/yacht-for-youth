@@ -24,7 +24,7 @@ export default function WorkHourMonitoringPage() {
   >("idle");
   const [workHours, setWorkHours] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  // const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
 
   // const [workplaceLocation] = useState<Coordinates>({
@@ -120,7 +120,7 @@ export default function WorkHourMonitoringPage() {
     if (ctx) {
       ctx.drawImage(videoRef.current, 0, 0);
       const imageData = canvas.toDataURL("image/jpeg");
-      setCapturedImage(imageData);
+      // setCapturedImage(imageData);
 
       try {
         // Get current location
@@ -216,7 +216,7 @@ export default function WorkHourMonitoringPage() {
 
   // Handle check in/out button click
   const handleCheckInOut = (): void => {
-    setCapturedImage(null);
+    // setCapturedImage(null);
     setVerificationStatus("idle");
     startCamera();
   };
