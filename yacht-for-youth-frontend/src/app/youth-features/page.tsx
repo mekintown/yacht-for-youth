@@ -29,6 +29,11 @@ const employeeFeatures = [
       "ช่วยให้ลูกจ้างและนายจ้างหาตำแหน่งงานที่อยู่ใกล้กัน เพิ่มความสะดวกในการเดินทาง",
     link: "/location",
   },
+  {
+    title: "📞 สายด่วน hotline & รายงานนายจ้าง",
+    description: "สามารถรายงานเหตุฉุกเฉินและนายจ้างได้",
+    link: "/#",
+  },
 ];
 
 export default function EmployerFeaturesPage() {
@@ -55,18 +60,19 @@ export default function EmployerFeaturesPage() {
                   {item.title}
                 </h3>
                 <p className="text-gray-600 flex-1">{item.description}</p>
-
-                <Link href={item.link} className="mt-4">
-                  <Button
-                    variant="gradient"
-                    className={buttonVariants({
-                      variant: "gradient",
-                      className: "mt-auto px-6 py-3",
-                    })}
-                  >
-                    ดูเพิ่มเติม →
-                  </Button>
-                </Link>
+                {item.link && (
+                  <Link href={item.link} className="mt-4">
+                    <Button
+                      variant="gradient"
+                      className={buttonVariants({
+                        variant: "gradient",
+                        className: "mt-auto px-6 py-3",
+                      })}
+                    >
+                      ดูเพิ่มเติม →
+                    </Button>
+                  </Link>
+                )}
               </motion.div>
             ))}
           </div>

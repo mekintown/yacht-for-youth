@@ -18,16 +18,16 @@ const employerFeatures = [
     link: "/contracts",
   },
   {
-    title: "สร้างเอกสารจ้างงานอัตโนมัติ",
+    title: "🔨 สร้างเอกสารจ้างงานอัตโนมัติ",
     description:
       "สร้างเอกสารจ้างงานที่มีมาตราฐาน ลดระยะเวลาในการจัดทำเอกสารจ้างงาน",
     link: "/generate-contracts",
   },
-  //   {
-  //     title: "ค้นหาสถานที่ทำงาน",
-  //     description: "ระบุตำแหน่งและค้นหาโลเคชันที่เหมาะสม จัดการสาขาได้ง่าย",
-  //     link: "/location",
-  //   },
+  {
+    title: "📣 รายงานลูกจ้าง",
+    description: "เปิดโอกาสให้นายจ้างสามารถรายงานลูกจ้างที่ทำผิดกฎหมายได้",
+    link: "/#",
+  },
 ];
 
 export default function EmployerFeaturesPage() {
@@ -55,17 +55,19 @@ export default function EmployerFeaturesPage() {
                 </h3>
                 <p className="text-gray-600 flex-1">{item.description}</p>
 
-                <Link href={item.link} className="mt-4">
-                  <Button
-                    variant="gradient"
-                    className={buttonVariants({
-                      variant: "gradient",
-                      className: "mt-auto px-6 py-3",
-                    })}
-                  >
-                    ดูเพิ่มเติม →
-                  </Button>
-                </Link>
+                {item.link && (
+                  <Link href={item.link} className="mt-4">
+                    <Button
+                      variant="gradient"
+                      className={buttonVariants({
+                        variant: "gradient",
+                        className: "mt-auto px-6 py-3",
+                      })}
+                    >
+                      ดูเพิ่มเติม →
+                    </Button>
+                  </Link>
+                )}
               </motion.div>
             ))}
           </div>
