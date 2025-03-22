@@ -13,7 +13,7 @@ type Coordinates = {
 };
 
 export default function WorkHourMonitoringPage() {
-  // States
+  // **States**
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [checkInTime, setCheckInTime] = useState<Date | null>(null);
@@ -25,12 +25,12 @@ export default function WorkHourMonitoringPage() {
   const [workHours, setWorkHours] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
 
-  // Refs
+  // **Refs**
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
 
-  // Update current time every minute
+  // **Update current time every minute**
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -39,13 +39,13 @@ export default function WorkHourMonitoringPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Format time for display
+  // **Format time for display**
   const formatTime = (date: Date | null): string => {
     if (!date) return "--:--";
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
-  // Calculate duration between check-in and check-out
+  // **Calculate duration between check-in and check-out**
   const calculateWorkHours = (checkIn: Date, checkOut: Date): string => {
     const diff = (checkOut.getTime() - checkIn.getTime()) / 1000 / 60 / 60;
     const hours = Math.floor(diff);
@@ -54,40 +54,58 @@ export default function WorkHourMonitoringPage() {
     return `${hours}h ${minutes}m`;
   };
 
-  // Start camera for face recognition
+  // **Start camera for face recognition**
   const startCamera = async (): Promise<void> => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "user" },
       });
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current
-            ?.play()
-            .catch((e) => console.error("Error playing video:", e));
-        };
-      }
-
-      streamRef.current = stream;
-      setIsCameraActive(true);
+      setCameraStream(stream);
     } catch (error) {
       console.error("Error accessing camera:", error);
+      setIsCameraActive(false);
     }
   };
 
-  // Stop camera
+  // **Stop camera**
   const stopCamera = (): void => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop());
+      setCameraStream(null);
     }
-
-    setIsCameraActive(false);
   };
 
-  // Capture image for verification and get location
+  // **Effect to start/stop camera based on isCameraActive**
+  useEffect(() => {
+    if (isCameraActive) {
+      startCamera();
+    } else {
+      stopCamera();
+    }
+  }, [isCameraActive]);
+
+  // **Effect to set stream on video element**
+  useEffect(() => {
+    if (videoRef.current && cameraStream) {
+      videoRef.current.srcObject = cameraStream;
+      videoRef.current.onloadedmetadata = () => {
+        if (videoRef.current) {
+          videoRef.current
+            .play()
+            .catch((e) => console.error("Error playing video:", e));
+        }
+      };
+    }
+  }, [cameraStream]);
+
+  // **Cleanup effect**
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
+
+  // **Capture image for verification and get location**
   const captureImage = async (): Promise<void> => {
     if (!videoRef.current) return;
 
@@ -127,13 +145,13 @@ export default function WorkHourMonitoringPage() {
         setIsProcessing(false);
         setTimeout(() => {
           setVerificationStatus("idle");
-          stopCamera();
+          setIsCameraActive(false);
         }, 3000);
       }
     }
   };
 
-  // Verification process with location check
+  // **Verification process with location check**
   const processVerification = (
     imageData: string,
     currentCoords: Coordinates
@@ -142,7 +160,7 @@ export default function WorkHourMonitoringPage() {
 
     // Simulate API call
     setTimeout(() => {
-      const isVerified = true || imageData || currentCoords; // Simulate verification logic
+      const isVerified = true; // Simulate verification logic
 
       if (isVerified) {
         setVerificationStatus("success");
@@ -180,20 +198,20 @@ export default function WorkHourMonitoringPage() {
       setIsProcessing(false);
       setTimeout(() => {
         setVerificationStatus("idle");
-        stopCamera();
+        setIsCameraActive(false);
       }, 3000);
     }, 2000);
   };
 
-  // Handle check in/out button click
+  // **Handle check in/out button click**
   const handleCheckInOut = (): void => {
     setVerificationStatus("idle");
-    startCamera();
+    setIsCameraActive(true);
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-12">
-      {/* Heading / Hero */}
+      {/* **Heading / Hero** */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -209,7 +227,7 @@ export default function WorkHourMonitoringPage() {
         </p>
       </motion.div>
 
-      {/* Current Time Display */}
+      {/* **Current Time Display** */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -225,7 +243,7 @@ export default function WorkHourMonitoringPage() {
         </span>
       </motion.div>
 
-      {/* Display User Location if available */}
+      {/* **Display User Location if available** */}
       {userLocation && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -240,7 +258,7 @@ export default function WorkHourMonitoringPage() {
         </motion.div>
       )}
 
-      {/* Check In/Out Card */}
+      {/* **Check In/Out Card** */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -278,7 +296,7 @@ export default function WorkHourMonitoringPage() {
             )}
           </div>
 
-          {/* Camera Section */}
+          {/* **Camera Section** */}
           {isCameraActive && (
             <div className="relative mb-4">
               <div className="bg-black rounded-lg overflow-hidden aspect-video">
@@ -338,7 +356,7 @@ export default function WorkHourMonitoringPage() {
             </div>
           )}
 
-          {/* Action Button */}
+          {/* **Action Button** */}
           {!isCameraActive && (
             <Button
               className="w-full"
@@ -351,7 +369,7 @@ export default function WorkHourMonitoringPage() {
         </Card>
       </motion.div>
 
-      {/* Work History Section */}
+      {/* **Work History Section** */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
